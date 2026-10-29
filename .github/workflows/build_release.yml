@@ -1,0 +1,88 @@
+name: Build CCCD NFC Reader (Android & iOS)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Cho phép bấm nút "Run workflow" thủ công trên giao diện GitHub
+
+jobs:
+  # ========================================================
+  # JOB 1: BUILD FILE CÀI ĐẶT ANDROID (.APK)
+  # ========================================================
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài đặt Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cài đặt Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Tải các thư viện (Pub get)
+        run: flutter pub get
+
+      - name: Biên dịch file Android APK Release
+        run: flutter build apk --release
+
+      - name: Đổi tên file APK cho dễ nhớ
+        run: |
+          mkdir -p release_output
+          cp build/app/outputs/flutter-apk/app-release.apk release_output/CCCD_NFC_Reader_Android.apk
+
+      - name: Lưu trữ file cài đặt Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CCCD_NFC_Reader_Android_APK
+          path: release_output/CCCD_NFC_Reader_Android.apk
+          retention-days: 14
+
+  # ========================================================
+  # JOB 2: BUILD FILE CÀI ĐẶT IPHONE / IPAD (.IPA)
+  # ========================================================
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài đặt Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Cài đặt CocoaPods dependencies
+        run: |
+          flutter pub get
+          cd ios && pod install && cd ..
+
+      - name: Biên dịch ứng dụng iOS
+        run: flutter build ios --release --no-codesign
+
+      - name: Đóng gói thành file cài đặt IPA (.ipa)
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r CCCD_NFC_Reader_iOS.ipa Payload
+          mkdir -p release_output
+          mv CCCD_NFC_Reader_iOS.ipa release_output/
+
+      - name: Lưu trữ file cài đặt iOS IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: CCCD_NFC_Reader_iOS_IPA
+          path: release_output/CCCD_NFC_Reader_iOS.ipa
+          retention-days: 14
