@@ -64,10 +64,8 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Cài đặt CocoaPods dependencies
-        run: |
-          flutter pub get
-          cd ios && pod install && cd ..
+      - name: Tải các thư viện (Pub get)
+        run: flutter pub get
 
       - name: Biên dịch ứng dụng iOS
         run: flutter build ios --release --no-codesign

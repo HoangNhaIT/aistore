@@ -1,6 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Day Ma Nguon CCCD NFC Reader Len GitHub
+cls
 
 echo ======================================================================
 echo    TỰ ĐỘNG ĐẨY MÃ NGUỒN LÊN GITHUB & KÍCH HOẠT CLOUD BUILD APK/IPA
@@ -9,52 +10,68 @@ echo.
 
 cd /d "%~dp0"
 
-where git >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [1/3] May chua co Git, dang tu dong cai dat Git qua winget...
-    winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
-    if %errorlevel% neq 0 (
-        echo [Loi] Khong the tu dong cai Git. Ban hay tai va cai Git tai: https://git-scm.com/
-        pause
-        exit /b 1
-    )
-    set "PATH=C:\Program Files\Git\cmd;%PATH%"
-) else (
-    echo [OK] Git da san sang.
-)
+set "GIT_DIR=C:\Users\Hoang Nha IT\AppData\Local\Microsoft\WinGet\Packages\Git.MinGit_Microsoft.Winget.Source_8wekyb3d8bbwe\cmd"
+set "GH_DIR=C:\Users\Hoang Nha IT\AppData\Local\Microsoft\WinGet\Packages\GitHub.cli_Microsoft.Winget.Source_8wekyb3d8bbwe\bin"
+set "PATH=%GIT_DIR%;%GH_DIR%;%PATH%"
 
-echo.
-echo [2/3] Chuan bi kho chua Git local...
-if not exist ".git" (
-    git init
-    git branch -M main
-)
-
+echo [1/3] Kiểm tra Git local...
 git add .
-git commit -m "Khoi tao ung dung doc chip CCCD NFC Flutter cho Android va iOS"
+git commit -m "Complete CCCD NFC Reader with Android & iOS support" >nul 2>&1
+echo       ✓ Đã chuẩn bị xong mã nguồn!
 
 echo.
-echo [3/3] Ket noi voi GitHub:
-echo Ban hay tao 1 repository moi tren GitHub (https://github.com/new), sau do copy link repo dan vao day.
-set /p REPO_URL="Nhap link GitHub Repo (VD: https://github.com/tenban/cccd_nfc_reader.git): "
+echo [2/3] Cấu hình GitHub Repository:
+echo       https://github.com/HoangNhaIT/aistore.git
+git remote remove origin >nul 2>&1
+git remote add origin https://github.com/HoangNhaIT/aistore.git
 
-if "%REPO_URL%"=="" (
-    echo [Thong bao] Ban chua nhap link. Code da duoc commit o local. Ban co the push len sau.
-    pause
-    exit /b 0
+echo.
+echo ======================================================================
+echo    BẠN CẦN NHẬP GITHUB TOKEN ĐỂ ĐẨY CODE (DO GITHUB YÊU CẦU BẢO MẬT)
+echo ======================================================================
+echo.
+echo 👉 Nếu bạn đã có Personal Access Token (bắt đầu bằng ghp_...):
+echo    Hãy dán mã Token vào bên dưới rồi nhấn Enter.
+echo.
+echo 👉 Nếu chưa có Token, hãy nhấn ENTER để trình duyệt tự mở trang tạo Token
+echo    (Trang web sẽ tự tích sẵn quyền, bạn chỉ cần cuộn xuống cuối bấm Generate).
+echo.
+set /p TOKEN="Nhập GitHub Token (hoặc nhấn Enter để tạo mới): "
+
+if "%TOKEN%"=="" (
+    echo.
+    echo Đang mở trình duyệt tạo Token cho bạn...
+    start https://github.com/settings/tokens/new?scopes=repo,workflow^&description=CCCD_NFC_Builder
+    echo.
+    echo Sau khi tạo xong, bạn hãy copy mã Token (dạng ghp_xxxx) và dán vào đây:
+    set /p TOKEN="Dán mã Token vào đây: "
 )
 
-git remote remove origin >nul 2>&1
-git remote add origin %REPO_URL%
-git push -u origin main --force
+if "%TOKEN%"=="" (
+    echo [Lỗi] Bạn chưa nhập Token. Không thể đẩy code lên GitHub.
+    pause
+    exit /b 1
+)
 
 echo.
-echo ======================================================================
-echo [THANH CONG] Ma nguon da duoc day len GitHub!
-echo He thong GitHub Actions se tu dong build 2 file:
-echo    1. CCCD_NFC_Reader_Android.apk (Cho Android)
-echo    2. CCCD_NFC_Reader_iOS.ipa (Cho iPhone)
+echo [3/3] Đang đẩy code lên https://github.com/HoangNhaIT/aistore.git ...
+git push "https://%TOKEN%@github.com/HoangNhaIT/aistore.git" main --force
+
+if %errorlevel% equ 0 (
+    echo.
+    echo ======================================================================
+    echo    🎉🎉🎉 ĐÃ ĐẨY CODE LÊN GITHUB THÀNH CÔNG!
+    echo ======================================================================
+    echo.
+    echo Đang tự động mở tab Actions trên trình duyệt...
+    start https://github.com/HoangNhaIT/aistore/actions
+    echo.
+    echo 👉 Bạn sẽ thấy tiến trình "Build CCCD NFC Reader (Android & iOS)" đang chạy.
+    echo 👉 Sau khoảng 3-4 phút, bạn bấm vào đó và tải file CCCD_NFC_Reader_iOS.ipa về nhé!
+) else (
+    echo.
+    echo [LỖI] Không thể đẩy code lên GitHub. Vui lòng kiểm tra lại Token của bạn!
+)
+
 echo.
-echo Ban chi can vao tab "Actions" tren GitHub cua ban de tai file ve dung.
-echo ======================================================================
 pause
